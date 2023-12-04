@@ -1,45 +1,41 @@
-def sum_part_numbers(schematic):
-    def get_numbers_in_row(row):
-        numbers = []
-        num_str = ''
-        start = None
-        for i, char in enumerate(row):
-            if char.isdigit():
-                num_str += char
-                start = i if start is None else start
-            elif num_str:
-                numbers.append((int(num_str), (start, i - 1)))
-                num_str = ''
-                start = None
-        if num_str:  # Handle number at the end of the row
-            numbers.append((int(num_str), (start, len(row) - 1)))
+def sum_gear_ratios(schematic):
+    def get_adjacent_numbers(x, y, grid):
+        numbers = set()
+        for dx in [-1, 0, 1]:
+            for dy in [-1, 0, 1]:
+                if dx != 0 or dy != 0:  # Skip the center point
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < len(grid) and 0 <= ny < len(grid[0]) and grid[nx][ny].isdigit():
+                        number = find_number(nx, ny, grid)
+                        numbers.add(number)
         return numbers
 
-    def get_surrounding_coordinates(num, row_idx, bounds):
-        coordinates = set()
-        for i in range(num[1][0], num[1][1] + 1):
-            for dx in [-1, 0, 1]:
-                for dy in [-1, 0, 1]:
-                    if dx != 0 or dy != 0:  # Skip the center point
-                        x, y = row_idx + dx, i + dy
-                        if 0 <= x <= bounds[0] and 0 <= y <= bounds[1]:
-                            coordinates.add((x, y))
-        return coordinates
+    def find_number(x, y, grid):
+        # Find the full number that includes the digit at (x, y)
+        number_str = grid[x][y]
+        # Extend the number to the left
+        lx = y - 1
+        while lx >= 0 and grid[x][lx].isdigit():
+            number_str = grid[x][lx] + number_str
+            lx -= 1
+        # Extend the number to the right
+        rx = y + 1
+        while rx < len(grid[0]) and grid[x][rx].isdigit():
+            number_str += grid[x][rx]
+            rx += 1
+        return int(number_str)
 
-    def is_adjacent_to_symbol(coordinates):
-        return any(grid[x][y] in symbols for x, y in coordinates)
-
-    symbols = set('*#+$=&/@%-')
     grid = [list(line) for line in schematic.split('\n') if line.strip()]
-    bounds = (len(grid) - 1, len(grid[0]) - 1)
+    total_ratio = 0
 
-    total = 0
-    for row_idx, row in enumerate(grid):
-        for num in get_numbers_in_row(row):
-            if is_adjacent_to_symbol(get_surrounding_coordinates(num, row_idx, bounds)):
-                total += num[0]
+    for x in range(len(grid)):
+        for y in range(len(grid[x])):
+            if grid[x][y] == '*':
+                adjacent_numbers = get_adjacent_numbers(x, y, grid)
+                if len(adjacent_numbers) == 2:
+                    total_ratio += adjacent_numbers.pop() * adjacent_numbers.pop()
 
-    return total
+    return total_ratio
 
 # Example usage with the provided schematic
 schematic = """
@@ -183,5 +179,6 @@ schematic = """
 .....................666...147.........195...............................279.......119.....739....887...........@.521.........98............
 ................................405*.......................29...%1...................*........................754...#.........*.............
 961.........396.....................472.......225..739..............415............451......................................904.............
-"""  # Replace with your actual schematic
-print(sum_part_numbers(schematic))
+"""
+# Replace with your actual schematic
+print(sum_gear_ratios(schematic))
